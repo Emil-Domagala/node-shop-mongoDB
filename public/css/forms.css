@@ -21,8 +21,3 @@
 .form-control textarea:focus {
   outline-color: #00695c;
 }
-
-textarea {
-  resize: vertical;
-  max-height: 400px;
-}
