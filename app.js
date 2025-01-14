@@ -5,13 +5,13 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
+const csrf = require('csurf');
+const flash = require('connect-flash');
 
 /////////////////////////
 
 let user = 'SET UP YOUR OWN';
 let password = 'SET UP YOUR OWN';
-user = encodeURIComponent('emildomagalaa');
-password = encodeURIComponent('Node-Shop');
 
 const MONGODB_URI = `mongodb+srv://${user}:${password}@cluster0.nm9ax.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -22,6 +22,8 @@ const store = new MongoDBStore({
   uri: MONGODB_URI,
   collection: 'sessions',
 });
+const csrfProtection = csrf();
+app.use(flash());
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
@@ -45,6 +47,13 @@ app.use((req, res, next) => {
       req.next();
     })
     .catch((err) => console.log(err));
+});
+app.use(csrfProtection);
+
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
 });
 
 app.use('/admin', adminRoutes);
