@@ -4,31 +4,66 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 
+const ITEMS_PER_PAGE = 3;
+
 const handleError = (err, next) => {
+  console.log(err);
   const error = new Error(err);
   error.httpStatusCode = 500;
   return next(error);
 };
 
 exports.getIndex = (req, res, next) => {
+  const page = +req.query.page || 1;
+  let totalItems;
+
   Product.find()
+    .countDocuments()
+    .then((numProducts) => {
+      totalItems = numProducts;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
     .then((products) => {
       res.render('shop/index', {
         prods: products,
         pageTitle: 'Shop',
         path: '/',
+        hasPreviousPage: page > 1,
+        hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        currentPage: page,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => handleError(err, next));
 };
 
 exports.getAllProd = (req, res, next) => {
+  const page = +req.query.page || 1;
+  let totalItems;
+
   Product.find()
+    .countDocuments()
+    .then((numProducts) => {
+      totalItems = numProducts;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
     .then((products) => {
       res.render('shop/product-list', {
         prods: products,
         pageTitle: 'All Products',
         path: '/products',
+        hasPreviousPage: page > 1,
+        hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        currentPage: page,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => handleError(err, next));

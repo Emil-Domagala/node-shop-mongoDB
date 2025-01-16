@@ -10,8 +10,9 @@ const multer = require('multer');
 
 /////////////////////////
 
-let user = 'SET UP YOUR OWN';
-let password = 'SET UP YOUR OWN';
+const mongodb_keys = require('./util/API_KEYS').MONGODB_KEYS;
+const user = mongodb_keys.user;
+const password = mongodb_keys.password;
 
 const MONGODB_URI = `mongodb+srv://${user}:${password}@cluster0.nm9ax.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 

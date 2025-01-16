@@ -4,8 +4,10 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 
-let SENDGRID_API_KEY = 'SET UP YOUR OWN';
-let myEmailAddres = 'Set up your own';
+const SENDGRID_KEYS = require('../util/API_KEYS').SENDGRID_KEYS;
+
+const SENDGRID_API_KEY = SENDGRID_KEYS.SENDGRID_API_KEY;
+const myEmailAddres = SENDGRID_KEYS.myEmailAddres;
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
