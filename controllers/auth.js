@@ -9,6 +9,12 @@ let myEmailAddres = 'Set up your own';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
+const handleError = (err, next) => {
+  const error = new Error(err);
+  error.httpStatusCode = 500;
+  return next(error);
+};
+
 exports.getLogin = (req, res, next) => {
   let message = req.flash('error');
   if (message.length > 0) {
@@ -100,7 +106,7 @@ exports.postLogin = (req, res, next) => {
           res.redirect('/login');
         });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.postSignup = (req, res, next) => {
@@ -133,7 +139,7 @@ exports.postSignup = (req, res, next) => {
         html: '<h1>You sucessfully signed up!<h/1>',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.postLogout = (req, res, next) => {
@@ -182,7 +188,7 @@ exports.postReset = (req, res, next) => {
           });
         });
       })
-      .catch((err) => console.log(err));
+      .catch((err) => handleError(err, next));
   });
 };
 
@@ -227,5 +233,5 @@ exports.postNewPassword = (req, res, next) => {
     .then(() => {
       res.redirect('/login');
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };

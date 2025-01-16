@@ -1,5 +1,14 @@
 const Product = require('../models/product');
 const Order = require('../models/order');
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
+
+const handleError = (err, next) => {
+  const error = new Error(err);
+  error.httpStatusCode = 500;
+  return next(error);
+};
 
 exports.getIndex = (req, res, next) => {
   Product.find()
@@ -10,7 +19,7 @@ exports.getIndex = (req, res, next) => {
         path: '/',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.getAllProd = (req, res, next) => {
@@ -22,7 +31,7 @@ exports.getAllProd = (req, res, next) => {
         path: '/products',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.getCart = (req, res, next) => {
@@ -36,7 +45,7 @@ exports.getCart = (req, res, next) => {
         path: '/cart',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.postCart = (req, res, next) => {
@@ -49,7 +58,7 @@ exports.postCart = (req, res, next) => {
     .then(() => {
       res.redirect('/cart');
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.postCartDeleteProduct = (req, res, next) => {
@@ -57,7 +66,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
   req.user
     .deleleItemFromCart(prodId)
     .then(() => res.redirect('/'))
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 // // exports.getCheckout = (req, res, next) => {
@@ -77,7 +86,7 @@ exports.getProduct = (req, res, next) => {
         path: '/products',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.getOrders = (req, res, next) => {
@@ -89,7 +98,7 @@ exports.getOrders = (req, res, next) => {
         path: '/orders',
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
 };
 
 exports.postOrder = (req, res, next) => {
@@ -109,5 +118,36 @@ exports.postOrder = (req, res, next) => {
       return req.user.clearCart();
     })
     .then(() => res.redirect('/orders'))
-    .catch((err) => console.log(err));
+    .catch((err) => handleError(err, next));
+};
+
+exports.getInvoice = (req, res, next) => {
+  const orderId = req.params.orderId;
+  Order.findById(orderId)
+    .then((order) => {
+      if (!order) {
+        return next(new Error('No order found.'));
+      }
+      if (order.user.userId.toString() !== req.user._id.toString()) {
+        return next(new Error('Unauthorized'));
+      }
+
+      const pdfDoc = new PDFDocument();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+
+      pdfDoc.pipe(res);
+      pdfDoc.fontSize(26).text('Invoice');
+      pdfDoc.text('-------------------------');
+      let totalPrice = 0;
+      order.products.forEach((prod) => {
+        totalPrice += prod.product.price * prod.quantity;
+        pdfDoc.fontSize(14).text(prod.product.title + ' - ' + prod.quantity + ' x ' + '$' + prod.product.price);
+      });
+      pdfDoc.text('-------------------------');
+      pdfDoc.text('Total Price: $' + totalPrice);
+
+      pdfDoc.end();
+    })
+    .catch((err) => handleError(err, next));
 };

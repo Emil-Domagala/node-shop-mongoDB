@@ -10,7 +10,6 @@ const router = express.Router();
 
 const validationOfProduct = [
   body('title', 'title should be at least 3 char long and alphanumeric').isLength({ min: 3 }).isString().trim(),
-  body('imageUrl', 'Image should be valid url').isURL(),
   body('price', 'price should be decimal').isFloat(),
   body('description', 'desc should be at least 5 char and less then 254').isLength({ min: 5, max: 254 }).trim(),
 ];
