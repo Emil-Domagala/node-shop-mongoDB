@@ -1,8 +1,15 @@
+const STRIPE_KEY = require('../util/API_KEYS').STRIPE_KEY;
 const Product = require('../models/product');
 const Order = require('../models/order');
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const product = require('../models/product');
+
+const Stripe_secret_KEY = STRIPE_KEY.STRIPE_SECRET_KEY;
+const Stripe_public_KEY = STRIPE_KEY.STRIPE_PUBLIC_KEY;
+
+const stripe = require('stripe')(Stripe_secret_KEY);
 
 const ITEMS_PER_PAGE = 3;
 
@@ -104,13 +111,6 @@ exports.postCartDeleteProduct = (req, res, next) => {
     .catch((err) => handleError(err, next));
 };
 
-// // exports.getCheckout = (req, res, next) => {
-// //   res.render('shop/checkout', {
-// //     // prods: products,
-// //     pageTitle: 'Checkout',
-// //     path: '/checkout',
-// //   });
-// // };
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product.findById(prodId)
@@ -185,4 +185,45 @@ exports.getInvoice = (req, res, next) => {
       pdfDoc.end();
     })
     .catch((err) => handleError(err, next));
+};
+
+exports.getCheckout = (req, res, next) => {
+  let products;
+  let totalSum = 0;
+  req.user
+    .populate('cart.items.productId')
+    .then((user) => {
+      products = user.cart.items;
+      products.forEach((prod) => (totalSum += prod.quantity * prod.productId.price));
+
+      return stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: products.map((p) => {
+          return {
+            quantity: p.quantity,
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: p.productId.title,
+              },
+              unit_amount: Math.round(p.productId.price * 100),
+            },
+          };
+        }),
+        success_url: req.protocol + '://' + req.get('host') + '/' + '/checkout/success',
+        cancel_url: req.protocol + '://' + req.get('host') + '/' + '/checkout/cancel',
+      });
+    })
+    .then((session) => {
+      return res.render('shop/checkout', {
+        products: products,
+        pageTitle: 'Your checkout',
+        path: '/checkout',
+        totalSum: totalSum,
+        sessionId: session.id,
+        Stripe_public_KEY: Stripe_public_KEY,
+      });
+    })
+    .catch((err) => console.log(err));
 };
